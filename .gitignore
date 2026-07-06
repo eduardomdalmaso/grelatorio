@@ -1,0 +1,33 @@
+# Compiled binaries and installers
+build/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go temporary/test files
+*.test
+*.out
+*.prof
+
+# Frontend build & dependencies
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+.env
+.env.*
+!.env.example
+
+# IDE and OS files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db
+Desktop.ini
+.DS_Store
