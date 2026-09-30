@@ -1,4 +1,4 @@
-export namespace main {
+export namespace domain {
 	
 	export class Config {
 	    token: string;
@@ -46,6 +46,28 @@ export namespace main {
 	        this.url = source["url"];
 	        this.date = source["date"];
 	        this.ref = source["ref"];
+	    }
+	}
+	export class Repository {
+	    id: number;
+	    name: string;
+	    full_name: string;
+	    private: boolean;
+	    description: string;
+	    html_url: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Repository(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.full_name = source["full_name"];
+	        this.private = source["private"];
+	        this.description = source["description"];
+	        this.html_url = source["html_url"];
 	    }
 	}
 
