@@ -181,32 +181,44 @@
     return groups;
   });
 
+  let isExporting = $state(false);
+
   async function handleExport() {
     const element = document.getElementById('report-pdf-template');
     if (!element) return;
     
-    // Load html2pdf dynamically to split chunk from main bundle
-    const { default: html2pdf } = await import('html2pdf.js');
-    
-    /** @type {any} */
-    const opt = {
-      margin: 0,
-      filename: `Relatorio_Atividades_${client.replace(/[^a-zA-Z0-9]/g, '_')}_${referenceMonth.replace('/', '_')}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { 
-        mode: ['avoid-all', 'css'], 
-        avoid: ['tr', '.pdf-signatures', '.pdf-checklist-block', '.pdf-indicators-block'] 
-      }
-    };
+    isExporting = true;
+    try {
+      const module = await import('html2pdf.js');
+      const html2pdf = module.default || module;
 
-    html2pdf().set(opt).from(element).save();
+      /** @type {any} */
+      const opt = {
+        margin: 0,
+        filename: `Relatorio_Atividades_${(client || 'Cliente').replace(/[^a-zA-Z0-9]/g, '_')}_${(referenceMonth || 'Mes').replace('/', '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { 
+          mode: ['css', 'legacy']
+        }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err);
+    } finally {
+      isExporting = false;
+    }
+  }
+
+  function handlePrint() {
+    window.print();
   }
 
   /** @param {string} dateStr */
@@ -364,9 +376,14 @@
       </div>
     </div>
 
-    <button class="btn btn-success btn-block" style="width: 100%; height: 48px; font-size: 1rem; margin-bottom: 2rem;" onclick={handleExport} disabled={selectedActivities.length === 0}>
-      ⇩ Exportar PDF Oficial
-    </button>
+    <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 2rem;">
+      <button class="btn btn-success btn-block" style="width: 100%; height: 46px; font-size: 0.95rem;" onclick={handleExport} disabled={selectedActivities.length === 0 || isExporting}>
+        {isExporting ? '⏳ Gerando PDF...' : '⇩ Exportar PDF'}
+      </button>
+      <button class="btn btn-secondary btn-block" style="width: 100%; height: 42px; font-size: 0.9rem;" onclick={handlePrint} disabled={selectedActivities.length === 0}>
+        🖨️ Imprimir / Salvar PDF Nativo
+      </button>
+    </div>
   </div>
 
   <!-- Live Preview Panel (Right) -->
@@ -429,13 +446,20 @@
                 <div class="pdf-repo-group">
                   <h3 class="pdf-repo-title">Projeto / Repositório: {repo.split('/').pop()}</h3>
                   <table class="pdf-table">
+                    <colgroup>
+                      <col style="width: 54%;" />
+                      <col style="width: 15%;" />
+                      <col style="width: 10%;" />
+                      <col style="width: 9%;" />
+                      <col style="width: 12%;" />
+                    </colgroup>
                     <thead>
                       <tr>
                         <th>Descrição da Atividade</th>
-                        <th style="width: 80px; text-align: center;">Data</th>
-                        <th style="width: 65px; text-align: center;">Tipo</th>
-                        <th style="width: 55px; text-align: center;">Horas</th>
-                        <th style="width: 85px; text-align: center;">Status</th>
+                        <th style="text-align: center;">Data</th>
+                        <th style="text-align: center;">Tipo</th>
+                        <th style="text-align: center;">Horas</th>
+                        <th style="text-align: center;">Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -653,9 +677,8 @@
     overflow-y: auto;
     overflow-x: auto;
     padding: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    display: block;
+    text-align: center;
   }
 
 
@@ -687,29 +710,32 @@
     min-height: 297mm;
     background-color: #ffffff;
     color: #1e293b;
-    padding: 20mm;
+    padding: 15mm;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     font-family: 'Inter', Arial, sans-serif;
-    font-size: 10pt;
-    line-height: 1.5;
+    font-size: 9pt;
+    line-height: 1.45;
     position: relative;
     box-sizing: border-box;
     text-align: left;
+    margin: 0 auto;
+    display: inline-block;
+    overflow: hidden;
   }
 
   .pdf-header {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .pdf-header-main {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    padding-bottom: 10px;
+    padding-bottom: 8px;
   }
 
   .pdf-logo {
-    font-size: 11pt;
+    font-size: 10.5pt;
     font-weight: 800;
     color: #4f46e5;
     letter-spacing: -0.02em;
@@ -717,108 +743,125 @@
 
   .pdf-doc-info {
     text-align: right;
-    font-size: 8.5pt;
+    font-size: 8pt;
     color: #475569;
   }
 
   .pdf-header-bar-accent {
-    height: 4px;
+    height: 3px;
     background: linear-gradient(90deg, #4f46e5 0%, #a855f7 100%);
     border-radius: 2px;
   }
 
   .pdf-title {
-    font-size: 16pt;
+    font-size: 15pt;
     font-weight: 700;
     color: #0f172a;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     letter-spacing: -0.025em;
   }
 
   .pdf-description {
     color: #475569;
-    font-size: 9pt;
+    font-size: 8.5pt;
     line-height: 1.4;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .pdf-meta-table {
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .pdf-meta-table table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
+    box-sizing: border-box;
   }
 
   .pdf-meta-table td {
-    padding: 6px 10px;
+    padding: 5px 8px;
     border: 1px solid #cbd5e1;
-    font-size: 9pt;
+    font-size: 8.5pt;
     vertical-align: middle;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    box-sizing: border-box;
   }
 
   .pdf-meta-label {
     background-color: #f1f5f9;
     font-weight: 700;
     color: #475569;
-    width: 20%;
+    width: 22%;
   }
 
   .pdf-meta-value {
     color: #0f172a;
-    width: 30%;
+    width: 28%;
     font-weight: 600;
   }
 
   .pdf-section-title {
-    font-size: 11pt;
+    font-size: 10.5pt;
     font-weight: 700;
     color: #0f172a;
     border-bottom: 2px solid #e2e8f0;
     padding-bottom: 4px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
   .pdf-repo-group {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .pdf-repo-title {
-    font-size: 9.5pt;
+    font-size: 9pt;
     font-weight: 700;
     color: #4f46e5;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
+    word-break: break-word;
   }
 
   .pdf-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
+    box-sizing: border-box;
   }
 
-  .pdf-table tr {
-    page-break-inside: avoid;
-    break-inside: avoid;
+  .pdf-table tr,
+  .pdf-table td,
+  .pdf-table th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-sizing: border-box;
   }
 
   .pdf-table th {
     background-color: #f8fafc;
     border: 1px solid #cbd5e1;
-    font-size: 8.5pt;
+    font-size: 8pt;
     font-weight: 700;
     color: #475569;
-    padding: 6px 8px;
+    padding: 5px 6px;
     text-align: left;
+    word-break: break-word;
   }
 
   .pdf-table td {
     border: 1px solid #e2e8f0;
-    padding: 6px 8px;
-    font-size: 8.5pt;
+    padding: 5px 6px;
+    font-size: 8pt;
     vertical-align: top;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .pdf-indicators-block {
@@ -905,5 +948,45 @@
     height: 1px;
     background-color: #94a3b8;
     margin-bottom: 8px;
+  }
+
+  @media print {
+    :global(body),
+    :global(#app),
+    :global(.workspace),
+    :global(.workspace-content) {
+      background: #ffffff !important;
+      color: #000000 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: visible !important;
+    }
+
+    :global(.sidebar),
+    :global(.workspace-header),
+    .controls-panel,
+    .preview-header-bar {
+      display: none !important;
+    }
+
+    .preview-panel {
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: visible !important;
+    }
+
+    .pdf-container {
+      padding: 0 !important;
+      overflow: visible !important;
+    }
+
+    .pdf-page {
+      box-shadow: none !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 10mm 15mm !important;
+    }
   }
 </style>
