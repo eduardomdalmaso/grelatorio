@@ -16,5 +16,6 @@ type ActivityFilter struct {
 	Username  string
 	StartDate string
 	EndDate   string
-	Repo      string // Optional: filter by specific "owner/repo" or empty for all
+	Repo      string   // Optional: filter by specific "owner/repo" or empty for all
+	Repos     []string // Optional: filter by multiple "owner/repo"
 }

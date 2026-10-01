@@ -1,6 +1,7 @@
 const path = require('path');
 
-const wailsPath = path.join(process.env.USERPROFILE || 'C:\\Users\\eduar', 'go', 'bin', 'wails.exe');
+const userProfile = process.env.USERPROFILE || 'C:\\Users\\hades';
+const wailsPath = path.join(userProfile, 'go', 'bin', 'wails.exe');
 
 module.exports = {
   apps: [
@@ -9,6 +10,7 @@ module.exports = {
       script: wailsPath,
       args: "dev",
       cwd: __dirname,
+      interpreter: "none",
       watch: false,
       autorestart: false,
       max_memory_restart: "1G",
@@ -18,8 +20,7 @@ module.exports = {
     },
     {
       name: "relatorio-frontend",
-      script: "npm",
-      args: "run dev",
+      script: "node_modules/vite/bin/vite.js",
       cwd: path.join(__dirname, "frontend"),
       watch: false,
       autorestart: true,

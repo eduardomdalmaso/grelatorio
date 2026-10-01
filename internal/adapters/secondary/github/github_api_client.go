@@ -148,8 +148,20 @@ func (c *GithubAPIClient) FetchActivities(token string, filter domain.ActivityFi
 	var activities []domain.GithubActivity
 
 	repoQuery := ""
-	if filter.Repo != "" && filter.Repo != "all" {
-		repoQuery = "+repo:" + strings.TrimSpace(filter.Repo)
+	var targetRepos []string
+	if len(filter.Repos) > 0 {
+		targetRepos = filter.Repos
+	} else if filter.Repo != "" && filter.Repo != "all" {
+		for _, r := range strings.Split(filter.Repo, ",") {
+			r = strings.TrimSpace(r)
+			if r != "" && r != "all" {
+				targetRepos = append(targetRepos, r)
+			}
+		}
+	}
+
+	for _, r := range targetRepos {
+		repoQuery += "+repo:" + r
 	}
 
 	// 1. Fetch Commits

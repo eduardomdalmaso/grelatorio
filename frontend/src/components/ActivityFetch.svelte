@@ -10,7 +10,8 @@
 
   let startDate = $state('');
   let endDate = $state('');
-  let selectedTargetRepo = $state('all');
+  /** @type {string[]} */
+  let selectedTargetRepos = $state(['all']);
   /** @type {any[]} */
   let activities = $state([]);
   let loading = $state(false);
@@ -43,7 +44,9 @@
     errorMsg = '';
 
     try {
-      const repoFilter = selectedTargetRepo === 'all' ? '' : selectedTargetRepo;
+      const repoFilter = selectedTargetRepos.includes('all') || selectedTargetRepos.length === 0
+        ? ''
+        : selectedTargetRepos.join(',');
       const result = await FetchGithubActivity(startDate, endDate, repoFilter);
       activities = (result || []).map(act => ({
         ...act,
@@ -166,7 +169,7 @@
       <input id="endDate" type="date" class="form-control" bind:value={endDate} />
     </div>
 
-    <RepoSelector bind:selectedRepo={selectedTargetRepo} disabled={loading} />
+    <RepoSelector bind:selectedRepos={selectedTargetRepos} disabled={loading} />
 
     <button class="btn btn-primary btn-fetch" onclick={fetchActivity} disabled={loading}>
       {loading ? 'Buscando...' : '🔍 Buscar Atividade'}
